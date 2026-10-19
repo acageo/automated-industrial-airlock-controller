@@ -1,0 +1,721 @@
+#define SHIFT_DATA 2
+#define SHIFT_CLK 3
+#define SHIFT_LATCH 4
+#define EEPROM_D0 5
+#define EEPROM_D7 12
+#define WRITE_ENABLE 13
+
+// Structure for writing Airlock Memory Maps
+// Addresses span from 0x000 to 0x1FF (9 address lines A0-A8)
+void setAddress(int address, bool outputEnable) {
+  // Shift out High Byte (A8-A14 + OE pin)
+  shiftOut(SHIFT_DATA, SHIFT_CLK, MSBFIRST, (address >> 8) | (outputEnable ? 0x00 : 0x80));
+  // Shift out Low Byte (A0-A7)
+  shiftOut(SHIFT_DATA, SHIFT_CLK, MSBFIRST, address);
+  // Latch the outputs
+  digitalWrite(SHIFT_LATCH, LOW);
+  digitalWrite(SHIFT_LATCH, HIGH);
+  digitalWrite(SHIFT_LATCH, LOW);
+}
+
+byte readEEPROM(int address) {
+  for (int pin = EEPROM_D0; pin <= EEPROM_D7; pin += 1) {
+    pinMode(pin, INPUT);
+  }
+  setAddress(address, /* outputEnable */ true);
+  byte data = 0;
+  for (int pin = EEPROM_D7; pin >= EEPROM_D0; pin -= 1) {
+    data = (data << 1) + digitalRead(pin);
+  }
+  return data;
+}
+
+void writeEEPROM(int address, byte data) {
+  for (int pin = EEPROM_D0; pin <= EEPROM_D7; pin += 1) {
+    pinMode(pin, OUTPUT);
+  }
+  setAddress(address, /* outputEnable */ false);
+  for (int pin = EEPROM_D0; pin <= EEPROM_D7; pin += 1) {
+    digitalWrite(pin, data & 1);
+    data = data >> 1;
+  }
+  digitalWrite(WRITE_ENABLE, LOW);
+  delayMicroseconds(1);
+  digitalWrite(WRITE_ENABLE, HIGH);
+  delay(10); // AT28C64B internal write cycle time
+}
+
+// Function to dump and verify 9-bit address space (0x000 to 0x1FF = 512 bytes)
+void printContent() {
+  for (int base = 0; base <= 0x01FF; base += 16) {
+  byte data[16];
+  for (int offset = 0; offset <= 15; offset += 1) {
+  data[offset] = readEEPROM(base + offset);
+  }
+  char buf[80];
+  sprintf(buf, "%03X: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X",
+  base, data[0], data[1], data[2], data[3], data[4], data[5], data[6],
+  data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15]);
+  Serial.println(buf);
+  }
+}
+
+void burnAirlockLogic() {
+
+  Serial.println(F("Burning Airlock State Machine Table into EEPROM..."));
+  
+  Serial.println(F("Write process begin."));
+  
+  /* State Ready */
+  /* 0000 */
+  Serial.println(F("Write process begin for state 'Ready'"));
+
+  writeEEPROM(0x000, 0xC0);
+  writeEEPROM(0x001, 0xC0);
+  writeEEPROM(0x002, 0xC0);
+  writeEEPROM(0x003, 0x0B);
+  writeEEPROM(0x004, 0xC0);
+  writeEEPROM(0x005, 0x0A);
+  writeEEPROM(0x006, 0xC0);
+  writeEEPROM(0x007, 0x0B);
+  writeEEPROM(0x008, 0xC0);
+  writeEEPROM(0x009, 0xB6);
+  writeEEPROM(0x00A, 0xC0);
+  writeEEPROM(0x00B, 0x0B);
+  writeEEPROM(0x00C, 0xC0);
+  writeEEPROM(0x00D, 0x0A);
+  writeEEPROM(0x00E, 0xC0);
+  writeEEPROM(0x00F, 0x0B);
+  writeEEPROM(0x010, 0xC0);
+  writeEEPROM(0x011, 0xB1);
+  writeEEPROM(0x012, 0xC0);
+  writeEEPROM(0x013, 0x0B);
+  writeEEPROM(0x014, 0xC0);
+  writeEEPROM(0x015, 0x0A);
+  writeEEPROM(0x016, 0xC0);
+  writeEEPROM(0x017, 0x0B);
+  writeEEPROM(0x018, 0xC0);
+  writeEEPROM(0x019, 0xC0);
+  writeEEPROM(0x01A, 0xC0);
+  writeEEPROM(0x01B, 0x0B);
+  writeEEPROM(0x01C, 0xC0);
+  writeEEPROM(0x01D, 0x0A);
+  writeEEPROM(0x01E, 0xC0);
+  writeEEPROM(0x01F, 0x0B);
+
+  Serial.println(F("Write process end for state 'Ready'"));
+
+  /* State Prepare for Enter */
+  /* 0001 */
+  Serial.println(F("Write process begin for state 'Prepare for Enter'"));
+
+  writeEEPROM(0x020, 0xD1);
+  writeEEPROM(0x021, 0x42);
+  writeEEPROM(0x022, 0xD1);
+  writeEEPROM(0x023, 0x0B);
+  writeEEPROM(0x024, 0xD1);
+  writeEEPROM(0x025, 0x0A);
+  writeEEPROM(0x026, 0xD1);
+  writeEEPROM(0x027, 0x0B);
+  writeEEPROM(0x028, 0xD1);
+  writeEEPROM(0x029, 0x42);
+  writeEEPROM(0x02A, 0xD1);
+  writeEEPROM(0x02B, 0x0B);
+  writeEEPROM(0x02C, 0xD1);
+  writeEEPROM(0x02D, 0x42);
+  writeEEPROM(0x02E, 0xD1);
+  writeEEPROM(0x02F, 0x0B);
+  writeEEPROM(0x030, 0xD1);
+  writeEEPROM(0x031, 0x42);
+  writeEEPROM(0x032, 0xD1);
+  writeEEPROM(0x033, 0x0B);
+  writeEEPROM(0x034, 0xD1);
+  writeEEPROM(0x035, 0x0A);
+  writeEEPROM(0x036, 0xD1);
+  writeEEPROM(0x037, 0x0B);
+  writeEEPROM(0x038, 0xD1);
+  writeEEPROM(0x039, 0x42);
+  writeEEPROM(0x03A, 0xD1);
+  writeEEPROM(0x03B, 0x0B);
+  writeEEPROM(0x03C, 0xD1);
+  writeEEPROM(0x03D, 0x0A);
+  writeEEPROM(0x03E, 0xD1);
+  writeEEPROM(0x03F, 0x0B);
+
+  Serial.println(F("Write process end for state 'Prepare for Enter'"));
+
+  /* State Unlock Door A */
+  /* 0010 */
+  Serial.println(F("Write process begin for state 'Unlock Door A'"));
+
+  writeEEPROM(0x040, 0x42);
+  writeEEPROM(0x041, 0xE3);
+  writeEEPROM(0x042, 0x42);
+  writeEEPROM(0x043, 0x0B);
+  writeEEPROM(0x044, 0x42);
+  writeEEPROM(0x045, 0x0A);
+  writeEEPROM(0x046, 0x42);
+  writeEEPROM(0x047, 0x0B);
+  writeEEPROM(0x048, 0x42);
+  writeEEPROM(0x049, 0xE3);
+  writeEEPROM(0x04A, 0x42);
+  writeEEPROM(0x04B, 0x0B);
+  writeEEPROM(0x04C, 0x42);
+  writeEEPROM(0x04D, 0x0A);
+  writeEEPROM(0x04E, 0x42);
+  writeEEPROM(0x04F, 0x0B);
+  writeEEPROM(0x050, 0x42);
+  writeEEPROM(0x051, 0xE3);
+  writeEEPROM(0x052, 0x42);
+  writeEEPROM(0x053, 0x0B);
+  writeEEPROM(0x054, 0x42);
+  writeEEPROM(0x055, 0x0A);
+  writeEEPROM(0x056, 0x42);
+  writeEEPROM(0x057, 0x0B);
+  writeEEPROM(0x058, 0x42);
+  writeEEPROM(0x059, 0xE3);
+  writeEEPROM(0x05A, 0x42);
+  writeEEPROM(0x05B, 0x0B);
+  writeEEPROM(0x05C, 0x42);
+  writeEEPROM(0x05D, 0x0A);
+  writeEEPROM(0x05E, 0x42);
+  writeEEPROM(0x05F, 0x0B);
+
+  Serial.println(F("Write process end for state 'Unlock Door A'"));
+  
+  /* State Decontamination Spray on Enter */
+  /* 0011 */
+  Serial.println(F("Write process begin for state 'Decontamination Spray on Enter'"));
+
+  writeEEPROM(0x060, 0xE3);
+  writeEEPROM(0x061, 0xD4);
+  writeEEPROM(0x062, 0xE3);
+  writeEEPROM(0x063, 0x0B);
+  writeEEPROM(0x064, 0xE3);
+  writeEEPROM(0x065, 0x0A);
+  writeEEPROM(0x066, 0xE3);
+  writeEEPROM(0x067, 0x0B);
+  writeEEPROM(0x068, 0xE3);
+  writeEEPROM(0x069, 0xD4);
+  writeEEPROM(0x06A, 0xE3);
+  writeEEPROM(0x06B, 0x0B);
+  writeEEPROM(0x06C, 0xE3);
+  writeEEPROM(0x06D, 0x0A);
+  writeEEPROM(0x06E, 0xE3);
+  writeEEPROM(0x06F, 0x0B);
+  writeEEPROM(0x070, 0xE3);
+  writeEEPROM(0x071, 0xD4);
+  writeEEPROM(0x072, 0xE3);
+  writeEEPROM(0x073, 0x0B);
+  writeEEPROM(0x074, 0xE3);
+  writeEEPROM(0x075, 0x0A);
+  writeEEPROM(0x076, 0xE3);
+  writeEEPROM(0x077, 0x0B);
+  writeEEPROM(0x078, 0xE3);
+  writeEEPROM(0x079, 0xD4);
+  writeEEPROM(0x07A, 0xE3);
+  writeEEPROM(0x07B, 0x0B);
+  writeEEPROM(0x07C, 0xE3);
+  writeEEPROM(0x07D, 0x0A);
+  writeEEPROM(0x07E, 0xE3);
+  writeEEPROM(0x07F, 0x0B);
+
+  Serial.println(F("Write process end for state 'Decontamination Spray on Enter'"));
+
+  /* State Depressurize */
+  /* 0100 */
+  Serial.println(F("Write process begin for state 'Depressurize'"));
+
+  writeEEPROM(0x080, 0xD4);
+  writeEEPROM(0x081, 0x85);
+  writeEEPROM(0x082, 0xD4);
+  writeEEPROM(0x083, 0x0B);
+  writeEEPROM(0x084, 0xD4);
+  writeEEPROM(0x085, 0x0A);
+  writeEEPROM(0x086, 0xD4);
+  writeEEPROM(0x087, 0x0B);
+  writeEEPROM(0x088, 0xD4);
+  writeEEPROM(0x089, 0x85);
+  writeEEPROM(0x08A, 0xD4);
+  writeEEPROM(0x08B, 0x0B);
+  writeEEPROM(0x08C, 0xD4);
+  writeEEPROM(0x08D, 0x0A);
+  writeEEPROM(0x08E, 0xD4);
+  writeEEPROM(0x08F, 0x0B);
+  writeEEPROM(0x090, 0xD4);
+  writeEEPROM(0x091, 0x85);
+  writeEEPROM(0x092, 0xD4);
+  writeEEPROM(0x093, 0x0B);
+  writeEEPROM(0x094, 0xD4);
+  writeEEPROM(0x095, 0x0A);
+  writeEEPROM(0x096, 0xD4);
+  writeEEPROM(0x097, 0x0B);
+  writeEEPROM(0x098, 0xD4);
+  writeEEPROM(0x099, 0x85);
+  writeEEPROM(0x09A, 0xD4);
+  writeEEPROM(0x09B, 0x0B);
+  writeEEPROM(0x09C, 0xD4);
+  writeEEPROM(0x09D, 0x0A);
+  writeEEPROM(0x09E, 0xD4);
+  writeEEPROM(0x09F, 0x0B);
+
+  Serial.println(F("Write process end for state 'Depressurize'"));
+
+  /* State Enter */
+  /* 0101 */
+  Serial.println(F("Write process begin for state 'Enter'"));
+
+  writeEEPROM(0x0A0, 0x85);
+  writeEEPROM(0x0A1, 0xC0);
+  writeEEPROM(0x0A2, 0x85);
+  writeEEPROM(0x0A3, 0x0B);
+  writeEEPROM(0x0A4, 0x85);
+  writeEEPROM(0x0A5, 0x0A);
+  writeEEPROM(0x0A6, 0x85);
+  writeEEPROM(0x0A7, 0x0B);
+  writeEEPROM(0x0A8, 0x85);
+  writeEEPROM(0x0A9, 0xC0);
+  writeEEPROM(0x0AA, 0x85);
+  writeEEPROM(0x0AB, 0x0B);
+  writeEEPROM(0x0AC, 0x85);
+  writeEEPROM(0x0AD, 0x0A);
+  writeEEPROM(0x0AE, 0x85);
+  writeEEPROM(0x0AF, 0x0B);
+  writeEEPROM(0x0B0, 0x85);
+  writeEEPROM(0x0B1, 0xC0);
+  writeEEPROM(0x0B2, 0x85);
+  writeEEPROM(0x0B3, 0x0B);
+  writeEEPROM(0x0B4, 0x85);
+  writeEEPROM(0x0B5, 0x0A);
+  writeEEPROM(0x0B6, 0x85);
+  writeEEPROM(0x0B7, 0x0B);
+  writeEEPROM(0x0B8, 0x85);
+  writeEEPROM(0x0B9, 0xC0);
+  writeEEPROM(0x0BA, 0x85);
+  writeEEPROM(0x0BB, 0x0B);
+  writeEEPROM(0x0BC, 0x85);
+  writeEEPROM(0x0BD, 0x0A);
+  writeEEPROM(0x0BE, 0x85);
+  writeEEPROM(0x0BF, 0x0B);
+
+  Serial.println(F("Write process end for state 'Enter'"));
+
+  /* State Prepare for Exit */
+  /* 0110 */
+  Serial.println(F("Write process begin for state 'Prepare for Exit'"));
+
+  writeEEPROM(0x0C0, 0xD6);
+  writeEEPROM(0x0C1, 0x87);
+  writeEEPROM(0x0C2, 0xD6);
+  writeEEPROM(0x0C3, 0x0B);
+  writeEEPROM(0x0C4, 0xD6);
+  writeEEPROM(0x0C5, 0x0A);
+  writeEEPROM(0x0C6, 0xD6);
+  writeEEPROM(0x0C7, 0x0B);
+  writeEEPROM(0x0C8, 0xD6);
+  writeEEPROM(0x0C9, 0x87);
+  writeEEPROM(0x0CA, 0xD6);
+  writeEEPROM(0x0CB, 0x0B);
+  writeEEPROM(0x0CC, 0xD6);
+  writeEEPROM(0x0CD, 0x0A);
+  writeEEPROM(0x0CE, 0xD6);
+  writeEEPROM(0x0CF, 0x0B);
+  writeEEPROM(0x0D0, 0xD6);
+  writeEEPROM(0x0D1, 0x87);
+  writeEEPROM(0x0D2, 0xD6);
+  writeEEPROM(0x0D3, 0x0B);
+  writeEEPROM(0x0D4, 0xD6);
+  writeEEPROM(0x0D5, 0x0A);
+  writeEEPROM(0x0D6, 0xD6);
+  writeEEPROM(0x0D7, 0x0B);
+  writeEEPROM(0x0D8, 0xD6);
+  writeEEPROM(0x0D9, 0x87);
+  writeEEPROM(0x0DA, 0xD6);
+  writeEEPROM(0x0DB, 0x0B);
+  writeEEPROM(0x0DC, 0xD6);
+  writeEEPROM(0x0DD, 0x0A);
+  writeEEPROM(0x0DE, 0xD6);
+  writeEEPROM(0x0DF, 0x0B);
+
+  Serial.println(F("Write process end for state 'Prepare for Exit'"));
+
+  /* State Unlock Door B */
+  /* 0111*/
+  Serial.println(F("Write process begin for state 'Unlock Door B'"));
+
+  writeEEPROM(0x0E0, 0x87);
+  writeEEPROM(0x0E1, 0xD8);
+  writeEEPROM(0x0E2, 0x87);
+  writeEEPROM(0x0E3, 0x0B);
+  writeEEPROM(0x0E4, 0x87);
+  writeEEPROM(0x0E5, 0x0A);
+  writeEEPROM(0x0E6, 0x87);
+  writeEEPROM(0x0E7, 0x0B);
+  writeEEPROM(0x0E8, 0x87);
+  writeEEPROM(0x0E9, 0xD8);
+  writeEEPROM(0x0EA, 0x87);
+  writeEEPROM(0x0EB, 0x0B);
+  writeEEPROM(0x0EC, 0x87);
+  writeEEPROM(0x0ED, 0x0A);
+  writeEEPROM(0x0EE, 0x87);
+  writeEEPROM(0x0EF, 0x0B);
+  writeEEPROM(0x0F0, 0x87);
+  writeEEPROM(0x0F1, 0xD8);
+  writeEEPROM(0x0F2, 0x87);
+  writeEEPROM(0x0F3, 0x0B);
+  writeEEPROM(0x0F4, 0x87);
+  writeEEPROM(0x0F5, 0x0A);
+  writeEEPROM(0x0F6, 0x87);
+  writeEEPROM(0x0F7, 0x0B);
+  writeEEPROM(0x0F8, 0x87);
+  writeEEPROM(0x0F9, 0xD8);
+  writeEEPROM(0x0FA, 0x87);
+  writeEEPROM(0x0FB, 0x0B);
+  writeEEPROM(0x0FC, 0x87);
+  writeEEPROM(0x0FD, 0x0A);
+  writeEEPROM(0x0FE, 0x87);
+  writeEEPROM(0x0FF, 0x0B);
+
+  Serial.println(F("Write process end for state 'Unlock Door B'"));
+
+  /* State Pressurize */
+  /* 1000 */
+  Serial.println(F("Write process begin for state 'Pressurize'"));
+
+  writeEEPROM(0x100, 0xD8);
+  writeEEPROM(0x101, 0x49);
+  writeEEPROM(0x102, 0xD8);
+  writeEEPROM(0x103, 0x0B);
+  writeEEPROM(0x104, 0xD8);
+  writeEEPROM(0x105, 0x0A);
+  writeEEPROM(0x106, 0xD8);
+  writeEEPROM(0x107, 0x0B);
+  writeEEPROM(0x108, 0xD8);
+  writeEEPROM(0x109, 0x49);
+  writeEEPROM(0x10A, 0xD8);
+  writeEEPROM(0x10B, 0x0B);
+  writeEEPROM(0x10C, 0xD8);
+  writeEEPROM(0x10D, 0x0A);
+  writeEEPROM(0x10E, 0xD8);
+  writeEEPROM(0x10F, 0x0B);
+  writeEEPROM(0x110, 0xD8);
+  writeEEPROM(0x111, 0x49);
+  writeEEPROM(0x112, 0xD8);
+  writeEEPROM(0x113, 0x0B);
+  writeEEPROM(0x114, 0xD8);
+  writeEEPROM(0x115, 0x0A);
+  writeEEPROM(0x116, 0xD8);
+  writeEEPROM(0x117, 0x0B);
+  writeEEPROM(0x118, 0xD8);
+  writeEEPROM(0x119, 0x49);
+  writeEEPROM(0x11A, 0xD8);
+  writeEEPROM(0x11B, 0x0B);
+  writeEEPROM(0x11C, 0xD8);
+  writeEEPROM(0x11D, 0x0A);
+  writeEEPROM(0x11E, 0xD8);
+  writeEEPROM(0x11F, 0x0B);
+
+  Serial.println(F("Write process end for state 'Pressurize'"));
+
+  /* State Exit */
+  /* 1001*/
+  Serial.println(F("Write process begin for state 'Exit'"));
+
+  writeEEPROM(0x120, 0x49);
+  writeEEPROM(0x121, 0xC0);
+  writeEEPROM(0x122, 0x49);
+  writeEEPROM(0x123, 0x0B);
+  writeEEPROM(0x124, 0x49);
+  writeEEPROM(0x125, 0x0A);
+  writeEEPROM(0x126, 0x49);
+  writeEEPROM(0x127, 0x0B);
+  writeEEPROM(0x128, 0x49);
+  writeEEPROM(0x129, 0xC0);
+  writeEEPROM(0x12A, 0x49);
+  writeEEPROM(0x12B, 0x0B);
+  writeEEPROM(0x12C, 0x49);
+  writeEEPROM(0x12D, 0x0A);
+  writeEEPROM(0x12E, 0x49);
+  writeEEPROM(0x12F, 0x0B);
+  writeEEPROM(0x130, 0x49);
+  writeEEPROM(0x131, 0xC0);
+  writeEEPROM(0x132, 0x49);
+  writeEEPROM(0x133, 0x0B);
+  writeEEPROM(0x134, 0x49);
+  writeEEPROM(0x135, 0x0A);
+  writeEEPROM(0x136, 0x49);
+  writeEEPROM(0x137, 0x0B);
+  writeEEPROM(0x138, 0x49);
+  writeEEPROM(0x139, 0xC0);
+  writeEEPROM(0x13A, 0x49);
+  writeEEPROM(0x13B, 0x0B);
+  writeEEPROM(0x13C, 0x49);
+  writeEEPROM(0x13D, 0x0A);
+  writeEEPROM(0x13E, 0x49);
+  writeEEPROM(0x13F, 0x0B);
+
+  Serial.println(F("Write process end for state 'Exit'"));
+
+  /* State Service (Maintenance) */
+  /* 1010 */
+  Serial.println(F("Write process begin for state 'Service (Maintenance)'"));
+
+  writeEEPROM(0x140, 0x0A);
+  writeEEPROM(0x141, 0x0A);
+  writeEEPROM(0x142, 0x0A);
+  writeEEPROM(0x143, 0x0B);
+  writeEEPROM(0x144, 0x0A);
+  writeEEPROM(0x145, 0xC0);
+  writeEEPROM(0x146, 0x0A);
+  writeEEPROM(0x147, 0x0B);
+  writeEEPROM(0x148, 0x0A);
+  writeEEPROM(0x149, 0x0A);
+  writeEEPROM(0x14A, 0x0A);
+  writeEEPROM(0x14B, 0x0B);
+  writeEEPROM(0x14C, 0x0A);
+  writeEEPROM(0x14D, 0xC0);
+  writeEEPROM(0x14E, 0x0A);
+  writeEEPROM(0x14F, 0x0B);
+  writeEEPROM(0x150, 0x0A);
+  writeEEPROM(0x151, 0x0A);
+  writeEEPROM(0x152, 0x0A);
+  writeEEPROM(0x153, 0x0B);
+  writeEEPROM(0x154, 0x0A);
+  writeEEPROM(0x155, 0xC0);
+  writeEEPROM(0x156, 0x0A);
+  writeEEPROM(0x157, 0x0B);
+  writeEEPROM(0x158, 0x0A);
+  writeEEPROM(0x159, 0x0A);
+  writeEEPROM(0x15A, 0x0A);
+  writeEEPROM(0x15B, 0x0B);
+  writeEEPROM(0x15C, 0x0A);
+  writeEEPROM(0x15D, 0xC0);
+  writeEEPROM(0x15E, 0x0A);
+  writeEEPROM(0x15F, 0x0B);
+
+  Serial.println(F("Write process end for state 'Service (Maintenance)'"));
+
+  /* State Emergency (SOS) */
+  /* 1011 */
+  Serial.println(F("Write process begin for state 'Emergency (SOS)'"));
+
+  writeEEPROM(0x160, 0x0B);
+  writeEEPROM(0x161, 0x0B);
+  writeEEPROM(0x162, 0x0B);
+  writeEEPROM(0x163, 0x0A);
+  writeEEPROM(0x164, 0x0B);
+  writeEEPROM(0x165, 0x0B);
+  writeEEPROM(0x166, 0x0B);
+  writeEEPROM(0x167, 0x0A);
+  writeEEPROM(0x168, 0x0B);
+  writeEEPROM(0x169, 0x0B);
+  writeEEPROM(0x16A, 0x0B);
+  writeEEPROM(0x16B, 0x0A);
+  writeEEPROM(0x16C, 0x0B);
+  writeEEPROM(0x16D, 0x0B);
+  writeEEPROM(0x16E, 0x0B);
+  writeEEPROM(0x16F, 0x0A);
+  writeEEPROM(0x170, 0x0B);
+  writeEEPROM(0x171, 0x0B);
+  writeEEPROM(0x172, 0x0B);
+  writeEEPROM(0x173, 0x0A);
+  writeEEPROM(0x174, 0x0B);
+  writeEEPROM(0x175, 0x0B);
+  writeEEPROM(0x176, 0x0B);
+  writeEEPROM(0x177, 0x0A);
+  writeEEPROM(0x178, 0x0B);
+  writeEEPROM(0x179, 0x0B);
+  writeEEPROM(0x17A, 0x0B);
+  writeEEPROM(0x17B, 0x0A);
+  writeEEPROM(0x17C, 0x0B);
+  writeEEPROM(0x17D, 0x0B);
+  writeEEPROM(0x17E, 0x0B);
+  writeEEPROM(0x17F, 0x0A);
+
+  Serial.println(F("Write process end for state 'Emergency (SOS)'"));
+
+  /* State Service (Maintenance) - Failover Address Mappings */
+  /* 1100 */
+  Serial.println(F("Write process begin for failover condition 'Service (Maintenance)' - 1100 "));
+
+  writeEEPROM(0x180, 0x0A);
+  writeEEPROM(0x181, 0x0A);
+  writeEEPROM(0x182, 0x0A);
+  writeEEPROM(0x183, 0x0B);
+  writeEEPROM(0x184, 0x0A);
+  writeEEPROM(0x185, 0xC0);
+  writeEEPROM(0x186, 0x0A);
+  writeEEPROM(0x187, 0x0B);
+  writeEEPROM(0x188, 0x0A);
+  writeEEPROM(0x189, 0x0A);
+  writeEEPROM(0x18A, 0x0A);
+  writeEEPROM(0x18B, 0x0B);
+  writeEEPROM(0x18C, 0x0A);
+  writeEEPROM(0x18D, 0xC0);
+  writeEEPROM(0x18E, 0x0A);
+  writeEEPROM(0x18F, 0x0B);
+  writeEEPROM(0x190, 0x0A);
+  writeEEPROM(0x191, 0x0A);
+  writeEEPROM(0x192, 0x0A);
+  writeEEPROM(0x193, 0x0B);
+  writeEEPROM(0x194, 0x0A);
+  writeEEPROM(0x195, 0xC0);
+  writeEEPROM(0x196, 0x0A);
+  writeEEPROM(0x197, 0x0B);
+  writeEEPROM(0x198, 0x0A);
+  writeEEPROM(0x199, 0x0A);
+  writeEEPROM(0x19A, 0x0A);
+  writeEEPROM(0x19B, 0x0B);
+  writeEEPROM(0x19C, 0x0A);
+  writeEEPROM(0x19D, 0xC0);
+  writeEEPROM(0x19E, 0x0A);
+  writeEEPROM(0x19F, 0x0B);
+
+  Serial.println(F("Write process end for failover condition 'Service (Maintenance)' - 1100 "));
+
+  /* State Service (Maintenance) - Failover Address Mappings */
+  /* 1101 */
+  Serial.println(F("Write process begin for failover condition 'Service (Maintenance)' - 1101 "));
+
+  writeEEPROM(0x1A0, 0x0A);
+  writeEEPROM(0x1A1, 0x0A);
+  writeEEPROM(0x1A2, 0x0A);
+  writeEEPROM(0x1A3, 0x0B);
+  writeEEPROM(0x1A4, 0x0A);
+  writeEEPROM(0x1A5, 0xC0);
+  writeEEPROM(0x1A6, 0x0A);
+  writeEEPROM(0x1A7, 0x0B);
+  writeEEPROM(0x1A8, 0x0A);
+  writeEEPROM(0x1A9, 0x0A);
+  writeEEPROM(0x1AA, 0x0A);
+  writeEEPROM(0x1AB, 0x0B);
+  writeEEPROM(0x1AC, 0x0A);
+  writeEEPROM(0x1AD, 0xC0);
+  writeEEPROM(0x1AE, 0x0A);
+  writeEEPROM(0x1AF, 0x0B);
+  writeEEPROM(0x1B0, 0x0A);
+  writeEEPROM(0x1B1, 0x0A);
+  writeEEPROM(0x1B2, 0x0A);
+  writeEEPROM(0x1B3, 0x0B);
+  writeEEPROM(0x1B4, 0x0A);
+  writeEEPROM(0x1B5, 0xC0);
+  writeEEPROM(0x1B6, 0x0A);
+  writeEEPROM(0x1B7, 0x0B);
+  writeEEPROM(0x1B8, 0x0A);
+  writeEEPROM(0x1B9, 0x0A);
+  writeEEPROM(0x1BA, 0x0A);
+  writeEEPROM(0x1BB, 0x0B);
+  writeEEPROM(0x1BC, 0x0A);
+  writeEEPROM(0x1BD, 0xC0);
+  writeEEPROM(0x1BE, 0x0A);
+  writeEEPROM(0x1BF, 0x0B);
+
+  Serial.println(F("Write process end for failover condition 'Service (Maintenance)' - 1101 "));
+
+  /* State Service (Maintenance) - Failover Address Mappings */
+  /* 1110 */
+  Serial.println(F("Write process begin for failover condition 'Service (Maintenance)' - 1110 "));
+
+  writeEEPROM(0x1C0, 0x0A);
+  writeEEPROM(0x1C1, 0x0A);
+  writeEEPROM(0x1C2, 0x0A);
+  writeEEPROM(0x1C3, 0x0B);
+  writeEEPROM(0x1C4, 0x0A);
+  writeEEPROM(0x1C5, 0xC0);
+  writeEEPROM(0x1C6, 0x0A);
+  writeEEPROM(0x1C7, 0x0B);
+  writeEEPROM(0x1C8, 0x0A);
+  writeEEPROM(0x1C9, 0x0A);
+  writeEEPROM(0x1CA, 0x0A);
+  writeEEPROM(0x1CB, 0x0B);
+  writeEEPROM(0x1CC, 0x0A);
+  writeEEPROM(0x1CD, 0xC0);
+  writeEEPROM(0x1CE, 0x0A);
+  writeEEPROM(0x1CF, 0x0B);
+  writeEEPROM(0x1D0, 0x0A);
+  writeEEPROM(0x1D1, 0x0A);
+  writeEEPROM(0x1D2, 0x0A);
+  writeEEPROM(0x1D3, 0x0B);
+  writeEEPROM(0x1D4, 0x0A);
+  writeEEPROM(0x1D5, 0xC0);
+  writeEEPROM(0x1D6, 0x0A);
+  writeEEPROM(0x1D7, 0x0B);
+  writeEEPROM(0x1D8, 0x0A);
+  writeEEPROM(0x1D9, 0x0A);
+  writeEEPROM(0x1DA, 0x0A);
+  writeEEPROM(0x1DB, 0x0B);
+  writeEEPROM(0x1DC, 0x0A);
+  writeEEPROM(0x1DD, 0xC0);
+  writeEEPROM(0x1DE, 0x0A);
+  writeEEPROM(0x1DF, 0x0B);
+
+  Serial.println(F("Write process end for failover condition 'Service (Maintenance)' - 1110 "));
+  
+  /* State Service (Maintenance) - Failover Address Mappings */
+  /* 1111 */
+  Serial.println(F("Write process begin for failover condition 'Service (Maintenance)' - 1111 "));
+
+  writeEEPROM(0x1E0, 0x0A);
+  writeEEPROM(0x1E1, 0x0A);
+  writeEEPROM(0x1E2, 0x0A);
+  writeEEPROM(0x1E3, 0x0B);
+  writeEEPROM(0x1E4, 0x0A);
+  writeEEPROM(0x1E5, 0xC0);
+  writeEEPROM(0x1E6, 0x0A);
+  writeEEPROM(0x1E7, 0x0B);
+  writeEEPROM(0x1E8, 0x0A);
+  writeEEPROM(0x1E9, 0x0A);
+  writeEEPROM(0x1EA, 0x0A);
+  writeEEPROM(0x1EB, 0x0B);
+  writeEEPROM(0x1EC, 0x0A);
+  writeEEPROM(0x1ED, 0xC0);
+  writeEEPROM(0x1EE, 0x0A);
+  writeEEPROM(0x1EF, 0x0B);
+  writeEEPROM(0x1F0, 0x0A);
+  writeEEPROM(0x1F1, 0x0A);
+  writeEEPROM(0x1F2, 0x0A);
+  writeEEPROM(0x1F3, 0x0B);
+  writeEEPROM(0x1F4, 0x0A);
+  writeEEPROM(0x1F5, 0xC0);
+  writeEEPROM(0x1F6, 0x0A);
+  writeEEPROM(0x1F7, 0x0B);
+  writeEEPROM(0x1F8, 0x0A);
+  writeEEPROM(0x1F9, 0x0A);
+  writeEEPROM(0x1FA, 0x0A);
+  writeEEPROM(0x1FB, 0x0B);
+  writeEEPROM(0x1FC, 0x0A);
+  writeEEPROM(0x1FD, 0xC0);
+  writeEEPROM(0x1FE, 0x0A);
+  writeEEPROM(0x1FF, 0x0B);
+  
+  Serial.println(F("Write process end for failover condition 'Service (Maintenance)' - 1111 "));
+
+  Serial.println(F("Write process completed."));
+
+}
+
+void setup() {
+  
+  pinMode(SHIFT_DATA, OUTPUT);
+  pinMode(SHIFT_CLK, OUTPUT);
+  pinMode(SHIFT_LATCH, OUTPUT);
+
+  digitalWrite(WRITE_ENABLE, HIGH);
+  pinMode(WRITE_ENABLE, OUTPUT);
+  
+  Serial.begin(57600);
+  delay(1000); // Allow Serial port and chip power to stabilize
+
+  Serial.println(F("--- Starting Airlock FSM EEPROM Burn ---"));
+  // 1. Burn state logic
+  burnAirlockLogic();
+
+  // 2. Read back & verify full 512 byte block
+  Serial.println(F("\n--- Verification Dump (Addresses 0x000 to 0x1FF)"));
+  printContent();
+
+}
+
+void loop() {
+  // Empty
+}
