@@ -36,7 +36,7 @@ automated-industrial-airlock-controller/
 ## Phase 1: Hardware Design & Core FSM Logic
 The initial phase focused on designing the state diagrams, mapping the required logic, and physically verifying the state transitions on hardware.
 * **Logic Mapping:** The core state transitions were designed and mapped into 512 hexadecimal address-data pairs.
-* **Initial Deployment:** An AT28C16 EEPROM was utilized as the primary logic unit.
+* **Initial Deployment:** An AT28C64B EEPROM was utilized as the primary logic unit.
 * **Hardware Validation:** Breadboard testing confirmed that the fundamental airlock sequencing (idle, pressurizing, doors open, depressurizing) functioned according to the defined truth tables.
 
 ### Design Evolution: The Timeout Limitation
