@@ -36,13 +36,13 @@ automated-industrial-airlock-controller/
 ## Phase 1: Hardware Design & Core FSM Logic
 The initial phase focused on designing the state diagrams, mapping the required logic, and physically verifying the state transitions on hardware.
 * **Logic Mapping:** The core state transitions were designed and mapped into 512 hexadecimal address-data pairs.
-* **Initial Deployment:** An AT28C64B EEPROM was utilized as the primary logic unit.
+* **Initial Deployment:** An C64B EEPROM was utilized as the primary logic unit.
 * **Hardware Validation:** Breadboard testing confirmed that the fundamental airlock sequencing (idle, pressurizing, doors open, depressurizing) functioned according to the defined truth tables.
 
 ### Design Evolution: The Timeout Limitation
 During Phase 1, the original architectural goal was to eliminate the need for external hardware timers (like a 555 timer or dedicated RTC chip). The theoretical approach was to simulate hardware timeouts by chaining sequential dummy states within the EEPROM. By driving the EEPROM at a known clock rate, a sequence of redundant states would act as a delay before triggering the next physical airlock action.
 
-However, this approach severely bloated the memory footprint. Because unrolling time into discrete memory addresses grows linearly with the duration of the delay, the AT28C16's strict 512-byte capacity was quickly exhausted. Attempting to fit operational logic, error states, and long timer delays into a 512-line map became impossible.
+However, this approach severely bloated the memory footprint. Because unrolling time into discrete memory addresses grows linearly with the duration of the delay, the AT28C64B's strict 512-byte capacity was quickly exhausted. Attempting to fit operational logic, error states, and long timer delays into a 512-line map became impossible.
 
 To circumvent this limitation, the mock-timer approach was ditched. The architecture was refactored to utilize a standard clock signal for state sequencing, offloading the timing responsibility and freeing up the EEPROM to act strictly as the logic matrix.
 
